@@ -27,6 +27,10 @@ setup(
         'setuptools',
         'Mopidy >= 1.0',
         'Pykka >= 1.1',
+        'SPI-Py',
+    ],
+    dependency_links=[
+        'git+https://github.com/lthiery/SPI-Py#egg=SPI-Py',
     ],
     entry_points={
         'mopidy.ext': [
