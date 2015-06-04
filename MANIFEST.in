@@ -3,7 +3,7 @@ include .travis.yml
 include LICENSE
 include MANIFEST.in
 include README.rst
-include mopidy_rfid-frontend/ext.conf
+include mopidy_rfid_frontend/ext.conf
 include tox.ini
 
 recursive-include tests *.py

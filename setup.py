@@ -13,7 +13,7 @@ def get_version(filename):
 
 setup(
     name='Mopidy-RFID-Frontend',
-    version=get_version('mopidy_rfid-frontend/__init__.py'),
+    version=get_version('mopidy_rfid_frontend/__init__.py'),
     url='https://github.com/glogiotatidis/mopidy-rfid-frontend',
     license='Apache License, Version 2.0',
     author='Giorgos Logiotatidis',
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         'mopidy.ext': [
-            'rfid-frontend = mopidy_rfid-frontend:Extension',
+            'rfid-frontend = mopidy_rfid_frontend:Extension',
         ],
     },
     classifiers=[

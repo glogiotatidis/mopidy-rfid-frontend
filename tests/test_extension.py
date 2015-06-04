@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from mopidy_rfid-frontend import Extension, frontend as frontend_lib
+from mopidy_rfid_frontend import Extension, frontend as frontend_lib
 
 
 def test_get_default_config():
