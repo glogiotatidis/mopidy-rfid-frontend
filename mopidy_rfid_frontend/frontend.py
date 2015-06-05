@@ -4,7 +4,10 @@ import logging
 import pykka
 import yaml
 import gobject
+import subprocess
+import urllib
 
+import beets
 import mfrc522
 import wiringpi2
 
@@ -24,6 +27,7 @@ class RFIDFrontend(pykka.ThreadingActor):
         with open(cardlist_filename) as cardlistfp:
             self.cardlist = yaml.load(cardlistfp)
         self._setup_ports()
+        self.beets_library = beets.Library(config['rfid-frontend']['beetslibrary'])
         self.card = None
         self.check_card()
         logger.info('RFID Frontend started')
@@ -71,7 +75,8 @@ class RFIDFrontend(pykka.ThreadingActor):
         logger.info('Card added, cleared playlist')
         self.core.tracklist.set_single(False)
         logger.info('Card added, set single to False')
-        self.core.tracklist.add(uris=self.cardlist[uid])
+        uris = self.convert_uris(self.cardlist[uid])
+        self.core.tracklist.add(uris=uris)
         logger.info('Card added, start playing')
         self.core.playback.play()
 
@@ -80,3 +85,17 @@ class RFIDFrontend(pykka.ThreadingActor):
         logger.info('Card removed, stopped playback')
         self.core.tracklist.clear()
         logger.info('Card removed, cleared playlist')
+
+    def convert_uris(self, uris):
+        new_list = []
+        for uri in uris:
+            if uri.startswith('beetsquery:'):
+                new_list.extend(self.beets_query(uri))
+            else:
+                new_list.append(uri)
+        return new_list
+
+    def beets_query(self, uri):
+        query = uri.split(':', 1)[1]
+        tracks = self.beets_library.items(query=query)
+        return ['file://{}'.format(urllib.quote(track.path)) for track in tracks]
