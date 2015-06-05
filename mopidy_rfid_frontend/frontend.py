@@ -3,33 +3,39 @@ from __future__ import unicode_literals
 import logging
 import pykka
 import yaml
-import RPi.GPIO as GPIO
-import MFRC522
+import gobject
+
+import mfrc522
+import wiringpi2
 
 logger = logging.getLogger(__name__)
-MIFAREReader = MFRC522.MFRC522(dev='/dev/spidev0.0')
-CHANNEL_IN = 33
-CHANNEL_OUT = 31
 
+MIFAREReader = mfrc522.MFRC522(dev='/dev/spidev0.0')
+CHANNEL_IN = 13 # BCM GPIO
+CHANNEL_OUT = 6 # BCM GPIO
 
 
 class RFIDFrontend(pykka.ThreadingActor):
 
     def __init__(self, config, core):
         super(RFIDFrontend, self).__init__()
+        self.core = core
         cardlist_filename = config['rfid-frontend']['cardlist']
         # with open(cardlist_filename) as cardlistfp:
         #     cardlist = yaml.load(cardlistcp)
 
-        self._setup_board()
+        self._setup_ports()
+        self.card = None
+        self.check_card()
         logger.info('RFID Frontend started')
 
-    def _setup_rfid(self):
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(CHANNEL_OUT, GPIO.OUT)
-        GPIO.output([CHANNEL_OUT], GPIO.HIGH)
-        GPIO.setup(CHANNEL_IN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.add_event_detect(CHANNEL_IN, GPIO.BOTH, callback=self.check_card, bouncetime=500)
+    def _setup_ports(self):
+        wiringpi2.wiringPiSetupSys()
+        wiringpi2.pinMode(CHANNEL_OUT, 1)
+        wiringpi2.digitalWrite(CHANNEL_OUT, 1)
+        wiringpi2.pinMode(CHANNEL_IN, 0)
+        # Pull down
+        wiringpi2.pullUpDnControl(CHANNEL_IN, 1)
 
     def read_rfid(self):
         (status,TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
@@ -44,18 +50,26 @@ class RFIDFrontend(pykka.ThreadingActor):
         return uid
 
     def check_card(self):
-        if GPIO.input(CHANNEL_IN) == GPIO.LOW:
-            uid = self.read_rfid()
-            self.card_added(uid)
+        pin_status = wiringpi2.digitalRead(CHANNEL_IN)
+        logger.debug('Pin {}'.format(pin_status))
+        if pin_status == 0:
+            if not self.card:
+                uid = self.read_rfid()
+                if uid:
+                    self.card = uid
+                    self.card_added(uid)
         else:
-            self.card_removed()
+            if self.card:
+                self.card = None
+                self.card_removed()
+        gobject.timeout_add(200, self.check_card)
 
     def card_added(self, uid):
         self.core.tracklist.clear()
         logger.info('Card added, cleared playlist')
         self.core.tracklist.set_single(False)
         logger.info('Card added, set single to False')
-        self.core.tracklist.add(uris=uris)
+        # self.core.tracklist.add(uris=uris)
         logger.info('Card added, start playing')
         self.core.playback.stop()
 
