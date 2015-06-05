@@ -27,10 +27,10 @@ setup(
         'setuptools',
         'Mopidy >= 1.0',
         'Pykka >= 1.1',
-        'SPI-Py',
+        'mfrc522'
     ],
     dependency_links=[
-        'git+https://github.com/lthiery/SPI-Py#egg=SPI-Py',
+        'https://github.com/glogiotatidis/MFRC522-python/archive/master.tar.gz#egg=mfrc522',
     ],
     entry_points={
         'mopidy.ext': [
