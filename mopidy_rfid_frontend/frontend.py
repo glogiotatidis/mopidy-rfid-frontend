@@ -21,9 +21,8 @@ class RFIDFrontend(pykka.ThreadingActor):
         super(RFIDFrontend, self).__init__()
         self.core = core
         cardlist_filename = config['rfid-frontend']['cardlist']
-        # with open(cardlist_filename) as cardlistfp:
-        #     cardlist = yaml.load(cardlistcp)
-
+        with open(cardlist_filename) as cardlistfp:
+            self.cardlist = yaml.load(cardlistfp)
         self._setup_ports()
         self.card = None
         self.check_card()
@@ -56,8 +55,11 @@ class RFIDFrontend(pykka.ThreadingActor):
             if not self.card:
                 uid = self.read_rfid()
                 if uid:
-                    self.card = uid
-                    self.card_added(uid)
+                    if uid in self.cardlist:
+                        self.card = uid
+                        self.card_added(uid)
+                    else:
+                        logger.info('Card added, no match.')
         else:
             if self.card:
                 self.card = None
@@ -69,9 +71,9 @@ class RFIDFrontend(pykka.ThreadingActor):
         logger.info('Card added, cleared playlist')
         self.core.tracklist.set_single(False)
         logger.info('Card added, set single to False')
-        # self.core.tracklist.add(uris=uris)
+        self.core.tracklist.add(uris=self.cardlist[uid])
         logger.info('Card added, start playing')
-        self.core.playback.stop()
+        self.core.playback.play()
 
     def card_removed(self):
         self.core.playback.stop()
