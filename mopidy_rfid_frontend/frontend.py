@@ -14,8 +14,9 @@ import wiringpi2
 logger = logging.getLogger(__name__)
 
 MIFAREReader = mfrc522.MFRC522(dev='/dev/spidev0.0')
-CHANNEL_IN = 13 # BCM GPIO
-CHANNEL_OUT = 6 # BCM GPIO
+
+CHANNEL_IN = 16 # BCM GPIO
+CHANNEL_OUT = 12 # BCM GPIO
 
 
 class RFIDFrontend(pykka.ThreadingActor):
@@ -37,8 +38,6 @@ class RFIDFrontend(pykka.ThreadingActor):
         wiringpi2.pinMode(CHANNEL_OUT, 1)
         wiringpi2.digitalWrite(CHANNEL_OUT, 1)
         wiringpi2.pinMode(CHANNEL_IN, 0)
-        # Pull down
-        wiringpi2.pullUpDnControl(CHANNEL_IN, 1)
 
     def read_rfid(self):
         (status,TagType) = MIFAREReader.MFRC522_Request(MIFAREReader.PICC_REQIDL)
